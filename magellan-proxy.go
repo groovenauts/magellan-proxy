@@ -48,10 +48,13 @@ func doRun(c *cli.Context) {
 	}
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-  err := cmd.Run()
+	err := cmd.Start()
 	if err != nil {
-		println("cmd.Run() return fail")
+		println("cmd.Start() return fail")
+		return
 	}
+	defer cmd.Wait()
+	println("command started")
 }
 
 // vim:set noexpandtab ts=2:
