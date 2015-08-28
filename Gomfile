@@ -1,1 +1,3 @@
 gom "github.com/codegangsta/cli", :tag => "v1.2.0"
+gom "github.com/ugorji/go/codec"
+gom "github.com/streadway/amqp"
