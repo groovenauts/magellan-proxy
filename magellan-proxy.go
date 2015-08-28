@@ -1,16 +1,15 @@
 package main
 
 import (
+	"errors"
+	"fmt"
 	"github.com/codegangsta/cli"
-	//"github.com/ugorji/go/codec"
-	//"github.com/streadway/amqp"
+	"github.com/groovenauts/magellan-proxy/magellan"
 	"os"
 	"os/exec"
 	"os/signal"
-	"syscall"
-	"fmt"
-	"errors"
 	"path/filepath"
+	"syscall"
 )
 
 func main() {
@@ -65,9 +64,10 @@ func spawn(args []string) (*os.Process, error) {
 	return child, nil
 }
 
-func killChild(child *os.Process, sigchan chan os.Signal) {
+func processSignal(sigchan chan os.Signal, child *os.Process, req_ch chan *magellan.RequestMessage) {
 	sig := <-sigchan
 	_ = child.Signal(sig)
+	close(req_ch)
 }
 
 func doRun(c *cli.Context) {
@@ -77,10 +77,27 @@ func doRun(c *cli.Context) {
 		return
 	}
 	sigchan := make(chan os.Signal)
-	go killChild(child, sigchan)
 	signal.Notify(sigchan, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
 	defer child.Wait()
 	println("command started")
+
+	queue, err := magellan.SetupMessageQueue()
+	if err != nil {
+		fmt.Println("fail to setup MQ:", err.Error())
+		return
+	}
+	defer queue.Close()
+	req_ch, err := queue.Consume()
+	if err != nil {
+		fmt.Println("fail to get message:", err.Error())
+		return
+	}
+
+	go processSignal(sigchan, child, req_ch)
+
+	for msg := range req_ch {
+		println("v = ", msg.V)
+	}
 }
 
 // vim:set noexpandtab ts=2:
