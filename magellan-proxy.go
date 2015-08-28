@@ -2,8 +2,15 @@ package main
 
 import (
 	"github.com/codegangsta/cli"
+	//"github.com/ugorji/go/codec"
+	//"github.com/streadway/amqp"
 	"os"
 	"os/exec"
+	"os/signal"
+	"syscall"
+	"fmt"
+	"errors"
+	"path/filepath"
 )
 
 func main() {
@@ -36,24 +43,43 @@ func doMain(c *cli.Context) {
 	doRun(c)
 }
 
-func doRun(c *cli.Context) {
-	var cmd *exec.Cmd
-	if len(c.Args()) > 0 {
-		arg0 := c.Args()[0]
-		args := c.Args()[1:len(c.Args())]
-		cmd = exec.Command(arg0, args...)
-	} else {
-		println("Please specify command")
-		return
+func spawn(args []string) (*os.Process, error) {
+	if len(args) == 0 {
+		return nil, errors.New("Please specify command")
 	}
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	err := cmd.Start()
+
+	arg0 := args[0]
+	if arg0 == filepath.Base(arg0) {
+		if lp, err := exec.LookPath(arg0); err != nil {
+			return nil, errors.New(fmt.Sprintln("command", arg0, "not found"))
+		} else {
+			arg0 = lp
+		}
+	}
+	var attr os.ProcAttr
+	attr.Files = []*os.File{os.Stdin, os.Stdout, os.Stderr}
+	child, err := os.StartProcess(arg0, args, &attr)
 	if err != nil {
-		println("cmd.Start() return fail")
+		return nil, err
+	}
+	return child, nil
+}
+
+func killChild(child *os.Process, sigchan chan os.Signal) {
+	sig := <-sigchan
+	_ = child.Signal(sig)
+}
+
+func doRun(c *cli.Context) {
+	child, err := spawn(c.Args())
+	if err != nil {
+		fmt.Println(err.Error())
 		return
 	}
-	defer cmd.Wait()
+	sigchan := make(chan os.Signal)
+	go killChild(child, sigchan)
+	signal.Notify(sigchan, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
+	defer child.Wait()
 	println("command started")
 }
 
