@@ -1,4 +1,4 @@
-package magellan
+package main
 
 import (
 	"github.com/ugorji/go/codec"

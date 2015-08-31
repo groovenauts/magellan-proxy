@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/codegangsta/cli"
-	"github.com/groovenauts/magellan-proxy/magellan"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -69,7 +68,7 @@ func watchChild(child *os.Process, sigchan chan os.Signal) {
 	sigchan <- os.Interrupt
 }
 
-func processSignal(sigchan chan os.Signal, child *os.Process, req_ch chan *magellan.RequestMessage, exitQueue chan bool) {
+func processSignal(sigchan chan os.Signal, child *os.Process, req_ch chan *RequestMessage, exitQueue chan bool) {
 	sig := <-sigchan
 	_ = child.Signal(sig)
 	close(req_ch)
@@ -77,11 +76,11 @@ func processSignal(sigchan chan os.Signal, child *os.Process, req_ch chan *magel
 	close(exitQueue)
 }
 
-func processRequest(mq *magellan.MessageQueue, req_ch chan *magellan.RequestMessage) {
+func processRequest(mq *MessageQueue, req_ch chan *RequestMessage) {
 	for req := range req_ch {
 		println(req.Request.Env.Method, req.Request.Env.Url)
 
-		res := magellan.Response{
+		res := Response{
 			Headers:      map[string]string{"Content-Type": "text/plain"},
 			Status:       "200",
 			Body:         "Hello World!\n",
@@ -92,7 +91,7 @@ func processRequest(mq *magellan.MessageQueue, req_ch chan *magellan.RequestMess
 }
 
 func doRun(c *cli.Context) {
-	mq, err := magellan.SetupMessageQueue()
+	mq, err := SetupMessageQueue()
 	if err != nil {
 		fmt.Println("fail to setup MQ:", err.Error())
 		return
