@@ -1,6 +1,11 @@
 package magellan
 
-type RequestMessage struct {
+import (
+	"github.com/ugorji/go/codec"
+	"reflect"
+)
+
+type Request struct {
 	V   int `codec:"v" msgpack:"v"`
 	Env struct {
 		ReferenceIp      string `codec:"REFERENCE_IP", msgpack:"REFERENCE_IP"`
@@ -17,11 +22,26 @@ type RequestMessage struct {
 	Options map[string]interface{} `codec:"options", msgpack:"options"`
 }
 
-type ResponseMessage struct {
+type Response struct {
 	Headers      map[string]string `codec:"headers", msgpack:"headers"`
 	Status       string            `codec:"status", msgpack:"status"`
 	Body         string            `codec:"body", msgpack:"body"`
 	BodyEncoding string            `codec:"body_encoding", msgpack:"body_encoding"`
+}
+
+func DecodeRequest(body []byte, req *Request) (err error) {
+	mh := codec.MsgpackHandle{RawToString: true}
+	mh.MapType = reflect.TypeOf(map[string]interface{}(nil))
+	dec := codec.NewDecoderBytes(body, &mh)
+	err = dec.Decode(req)
+	return
+}
+
+func (res *Response) Encode(body *[]byte) error {
+	mh := codec.MsgpackHandle{RawToString: true}
+	enc := codec.NewEncoderBytes(body, &mh)
+	err := enc.Encode(res)
+	return err
 }
 
 // vim:set noexpandtab ts=2:

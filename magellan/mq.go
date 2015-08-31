@@ -2,9 +2,7 @@ package magellan
 
 import (
 	"github.com/streadway/amqp"
-	"github.com/ugorji/go/codec"
 	"os"
-	"reflect"
 )
 
 type MessageQueue struct {
@@ -17,6 +15,12 @@ type MessageQueue struct {
 	Channel          *amqp.Channel
 	RequestQueue     string
 	ResponseExchange string
+}
+
+type RequestMessage struct {
+	Request       Request
+	ReplyTo       string
+	CorrelationId string
 }
 
 func SetupMessageQueue() (*MessageQueue, error) {
@@ -52,22 +56,40 @@ func (q *MessageQueue) Consume() (chan *RequestMessage, error) {
 	}
 	req_ch := make(chan *RequestMessage, 100)
 	go func() {
-		mh := codec.MsgpackHandle{RawToString: true}
-		mh.MapType = reflect.TypeOf(map[string]interface{}(nil))
 		for msg := range ch {
-			dec := codec.NewDecoderBytes(msg.Body, &mh)
 			ret := new(RequestMessage)
-			err = dec.Decode(ret)
+			err = DecodeRequest(msg.Body, &ret.Request)
 			if err != nil {
+				println("fail to decode message")
+				println(err.Error())
 				msg.Nack(false, false)
 			} else {
 				msg.Ack(false)
+				ret.ReplyTo = msg.ReplyTo
+				ret.CorrelationId = msg.CorrelationId
 				req_ch <- ret
 			}
 		}
 	}()
 
 	return req_ch, nil
+}
+
+func (q *MessageQueue) Publish(req *RequestMessage, res *Response) error {
+	p := amqp.Publishing{
+		Headers:       amqp.Table{},
+		DeliveryMode:  amqp.Persistent,
+		Expiration:    "1000",
+		CorrelationId: req.CorrelationId,
+	}
+	if err := res.Encode(&p.Body); err != nil {
+		return err
+	}
+	if err := q.Channel.Publish(q.ResponseExchange, req.ReplyTo, true, false, p); err != nil {
+		println(err.Error())
+		return err
+	}
+	return nil
 }
 
 // vim:set noexpandtab ts=2:

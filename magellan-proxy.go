@@ -64,39 +64,69 @@ func spawn(args []string) (*os.Process, error) {
 	return child, nil
 }
 
-func processSignal(sigchan chan os.Signal, child *os.Process, req_ch chan *magellan.RequestMessage) {
+func watchChild(child *os.Process, sigchan chan os.Signal) {
+	_, _ = child.Wait()
+	sigchan <- os.Interrupt
+}
+
+func processSignal(sigchan chan os.Signal, child *os.Process, req_ch chan *magellan.RequestMessage, exitQueue chan bool) {
 	sig := <-sigchan
 	_ = child.Signal(sig)
 	close(req_ch)
+	exitQueue <- true
+	close(exitQueue)
+}
+
+func processRequest(mq *magellan.MessageQueue, req_ch chan *magellan.RequestMessage) {
+	for req := range req_ch {
+		println(req.Request.Env.Method, req.Request.Env.Url)
+
+		res := magellan.Response{
+			Headers:      map[string]string{"Content-Type": "text/plain"},
+			Status:       "200",
+			Body:         "Hello World!\n",
+			BodyEncoding: "plain",
+		}
+		mq.Publish(req, &res)
+	}
 }
 
 func doRun(c *cli.Context) {
-	child, err := spawn(c.Args())
-	if err != nil {
-		fmt.Println(err.Error())
-		return
-	}
-	sigchan := make(chan os.Signal)
-	signal.Notify(sigchan, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
-	defer child.Wait()
-	println("command started")
-
-	queue, err := magellan.SetupMessageQueue()
+	mq, err := magellan.SetupMessageQueue()
 	if err != nil {
 		fmt.Println("fail to setup MQ:", err.Error())
 		return
 	}
-	defer queue.Close()
-	req_ch, err := queue.Consume()
+	defer mq.Close()
+
+	req_ch, err := mq.Consume()
 	if err != nil {
 		fmt.Println("fail to get message:", err.Error())
 		return
 	}
 
-	go processSignal(sigchan, child, req_ch)
+	child, err := spawn(c.Args())
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+	println("command started")
 
-	for msg := range req_ch {
-		println("v = ", msg.V)
+	sigchan := make(chan os.Signal)
+	signal.Notify(sigchan, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
+
+	go watchChild(child, sigchan)
+
+	exitQueue := make(chan bool)
+
+	go processSignal(sigchan, child, req_ch, exitQueue)
+
+	go processRequest(mq, req_ch)
+
+	for exit_p := range exitQueue {
+		if exit_p {
+			break
+		}
 	}
 }
 
