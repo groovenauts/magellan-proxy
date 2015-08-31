@@ -3,6 +3,7 @@ package magellan
 import (
 	"github.com/streadway/amqp"
 	"os"
+	"strings"
 )
 
 type MessageQueue struct {
@@ -30,7 +31,8 @@ func SetupMessageQueue() (*MessageQueue, error) {
 	q.Vhost = os.Getenv("MAGELLAN_WORKER_AMQP_VHOST")
 	q.User = os.Getenv("MAGELLAN_WORKER_AMQP_USER")
 	q.Password = os.Getenv("MAGELLAN_WORKER_AMQP_PASS")
-	url := "amqp://" + q.User + ":" + q.Password + "@" + q.Host + ":" + q.Port + q.Vhost
+	url := "amqp://" + q.User + ":" + q.Password + "@" + q.Host + ":" + q.Port + "/" + strings.Replace(q.Vhost, "/", "%2F", -1)
+	println("connect to amqp URL = ", url)
 	var err error
 	q.Connection, err = amqp.Dial(url)
 	if err != nil {
