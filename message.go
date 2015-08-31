@@ -16,16 +16,18 @@ type Request struct {
 		ServerName       string `codec:"SERVER_NAME", msgpack:"SERVER_NAME"`
 		ServerPort       int    `codec:"SERVER_PORT", msgpack:"SERVER_PORT"`
 		PathInfo         string `codec:"PATH_INFO", msgpack:"PATH_INFO"`
-		QUERY_STRING     string `codec:"QUERY_STRING", msgpack:"QUERY_STRING"`
+		QueryString      string `codec:"QUERY_STRING", msgpack:"QUERY_STRING"`
 	} `codec:"env" msgpack:"env"`
-	Headers map[string]string      `codec:"headers", msgpack:"headers"`
-	Options map[string]interface{} `codec:"options", msgpack:"options"`
+	Headers      map[string]string      `codec:"headers", msgpack:"headers"`
+	Body         []byte                 `codec:"body", msgpack:"body"`
+	BodyEnciding string                 `codec:"body_encoding", msgpack:"body_encoding"`
+	Options      map[string]interface{} `codec:"options", msgpack:"options"`
 }
 
 type Response struct {
 	Headers      map[string]string `codec:"headers", msgpack:"headers"`
 	Status       string            `codec:"status", msgpack:"status"`
-	Body         string            `codec:"body", msgpack:"body"`
+	Body         []byte            `codec:"body", msgpack:"body"`
 	BodyEncoding string            `codec:"body_encoding", msgpack:"body_encoding"`
 }
 

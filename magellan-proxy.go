@@ -80,13 +80,17 @@ func processRequest(mq *MessageQueue, req_ch chan *RequestMessage) {
 	for req := range req_ch {
 		println(req.Request.Env.Method, req.Request.Env.Url)
 
-		res := Response{
-			Headers:      map[string]string{"Content-Type": "text/plain"},
-			Status:       "200",
-			Body:         "Hello World!\n",
-			BodyEncoding: "plain",
+		res, err := ProcessHttpRequest(&req.Request)
+		if err != nil {
+			println("ProcessHttpRequest fail: ", err.Error())
+			res = &Response{
+				Headers:      map[string]string{"Content-Type": "text/plain"},
+				Status:       "200",
+				Body:         []byte("magellan-proxy: ProcessHttpRequest fail: " + err.Error()),
+				BodyEncoding: "plain",
+			}
 		}
-		mq.Publish(req, &res)
+		mq.Publish(req, res)
 	}
 }
 
@@ -119,6 +123,8 @@ func doRun(c *cli.Context) {
 	exitQueue := make(chan bool)
 
 	go processSignal(sigchan, child, req_ch, exitQueue)
+
+	InitHttpTransport()
 
 	go processRequest(mq, req_ch)
 
