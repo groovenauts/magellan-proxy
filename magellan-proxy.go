@@ -2,16 +2,19 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"github.com/codegangsta/cli"
 	"os"
 	"os/exec"
 	"os/signal"
 	"path/filepath"
 	"syscall"
+	"log"
 )
 
 func main() {
+	log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds)
+	log.SetPrefix("magellan-proxy: ")
+
 	app := cli.NewApp()
 	app.Name = "magellan-proxy"
 	app.Version = Version
@@ -48,13 +51,16 @@ func doMain(c *cli.Context) {
 
 func spawn(args []string) (*os.Process, error) {
 	if len(args) == 0 {
+		log.Println("Please specify command")
 		return nil, errors.New("Please specify command")
 	}
 
 	arg0 := args[0]
 	if arg0 == filepath.Base(arg0) {
 		if lp, err := exec.LookPath(arg0); err != nil {
-			return nil, errors.New(fmt.Sprintln("command", arg0, "not found"))
+			msg := "command " + arg0 + " not found"
+			log.Println(msg)
+			return nil, errors.New(msg)
 		} else {
 			arg0 = lp
 		}
@@ -63,6 +69,7 @@ func spawn(args []string) (*os.Process, error) {
 	attr.Files = []*os.File{os.Stdin, os.Stdout, os.Stderr}
 	child, err := os.StartProcess(arg0, args, &attr)
 	if err != nil {
+		log.Printf("fail to os.StartProcess: %s", err.Error())
 		return nil, err
 	}
 	return child, nil
@@ -83,11 +90,11 @@ func processSignal(sigchan chan os.Signal, child *os.Process, req_ch chan *Reque
 
 func processRequest(mq *MessageQueue, req_ch chan *RequestMessage) {
 	for req := range req_ch {
-		println(req.Request.Env.Method, req.Request.Env.Url)
+		log.Println(req.Request.Env.Method + " " + req.Request.Env.Url)
 
 		res, err := ProcessHttpRequest(&req.Request)
 		if err != nil {
-			println("ProcessHttpRequest fail: ", err.Error())
+			log.Printf("ProcessHttpRequest fail: %s", err.Error())
 			res = &Response{
 				Headers:      map[string]string{"Content-Type": "text/plain"},
 				Status:       "200",
@@ -102,23 +109,21 @@ func processRequest(mq *MessageQueue, req_ch chan *RequestMessage) {
 func doRun(c *cli.Context) {
 	mq, err := SetupMessageQueue()
 	if err != nil {
-		fmt.Println("fail to setup MQ:", err.Error())
+		log.Printf("fail to setup MQ: %s", err.Error())
 		return
 	}
 	defer mq.Close()
 
 	req_ch, err := mq.Consume()
 	if err != nil {
-		fmt.Println("fail to get message:", err.Error())
+		log.Printf("fail to get message: %s", err.Error())
 		return
 	}
 
 	child, err := spawn(c.Args())
 	if err != nil {
-		fmt.Println(err.Error())
 		return
 	}
-	println("command started")
 
 	sigchan := make(chan os.Signal)
 	signal.Notify(sigchan, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)

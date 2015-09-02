@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"strings"
 	"strconv"
@@ -26,7 +27,7 @@ func ProcessHttpRequest(req *Request) (*Response, error) {
 	url += req.Env.QueryString
 	httpReq, err := http.NewRequest(req.Env.Method, url, bytes.NewReader(req.Body))
 	if err != nil {
-		println("magellan-proxy: cannot create HTTP Request:" + err.Error())
+		log.Printf("cannot create HTTP Request: %s")
 		return nil, err
 	}
 	for h, v := range req.Headers {
@@ -38,7 +39,7 @@ func ProcessHttpRequest(req *Request) (*Response, error) {
 	tr := &transport
 	httpRes, err := tr.RoundTrip(httpReq)
 	if err != nil {
-		println("magellan-proxy: HTTP request failed.", err.Error())
+		log.Printf("HTTP request failed: %s", err.Error())
 		return nil, err
 	}
 	defer httpRes.Body.Close()
@@ -50,7 +51,7 @@ func ProcessHttpRequest(req *Request) (*Response, error) {
 	}
 	b, err := ioutil.ReadAll(httpRes.Body)
 	if err != nil {
-		println("magellan-proxy: HTTP Response body read fail: ", err.Error())
+		log.Printf("HTTP Response body read fail: %s", err.Error())
 		return nil, err
 	}
 	res.Body = b

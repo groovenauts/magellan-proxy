@@ -4,6 +4,7 @@ import (
 	"github.com/streadway/amqp"
 	"os"
 	"strings"
+	"log"
 )
 
 type MessageQueue struct {
@@ -32,7 +33,7 @@ func SetupMessageQueue() (*MessageQueue, error) {
 	q.User = os.Getenv("MAGELLAN_WORKER_AMQP_USER")
 	q.Password = os.Getenv("MAGELLAN_WORKER_AMQP_PASS")
 	url := "amqp://" + q.User + ":" + q.Password + "@" + q.Host + ":" + q.Port + "/" + strings.Replace(q.Vhost, "/", "%2F", -1)
-	println("connect to amqp URL = ", url)
+	log.Printf("connect to amqp URL = %s", url)
 	var err error
 	q.Connection, err = amqp.Dial(url)
 	if err != nil {
@@ -62,8 +63,7 @@ func (q *MessageQueue) Consume() (chan *RequestMessage, error) {
 			ret := new(RequestMessage)
 			err = DecodeRequest(msg.Body, &ret.Request)
 			if err != nil {
-				println("fail to decode message")
-				println(err.Error())
+				log.Printf("fail to decode request message from TRMQ: %s", err.Error())
 				msg.Nack(false, false)
 			} else {
 				msg.Ack(false)
@@ -88,7 +88,7 @@ func (q *MessageQueue) Publish(req *RequestMessage, res *Response) error {
 		return err
 	}
 	if err := q.Channel.Publish(q.ResponseExchange, req.ReplyTo, true, false, p); err != nil {
-		println(err.Error())
+		log.Printf("fail to publish response to TRMQ: %s", err.Error())
 		return err
 	}
 	return nil
