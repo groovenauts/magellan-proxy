@@ -129,9 +129,12 @@ func doRun(c *cli.Context) {
 
 	go processSignal(sigchan, child, req_ch, exitQueue)
 
-	InitHttpTransport(c.Int("port"), c.Int("num"))
+	jobNum := c.Int("num")
+	InitHttpTransport(c.Int("port"), jobNum)
 
-	go processRequest(mq, req_ch)
+	for i := 0; i < jobNum; i++ {
+		go processRequest(mq, req_ch)
+	}
 
 	for exit_p := range exitQueue {
 		if exit_p {
