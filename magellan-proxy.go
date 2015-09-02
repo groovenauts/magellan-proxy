@@ -25,6 +25,11 @@ func main() {
 			Value: 80,
 			Usage: "Port to foward HTTP request",
 		},
+		cli.IntFlag{
+			Name:  "num, n",
+			Value: 1,
+			Usage: "Maximum number concurrent HTTP request",
+		},
 	}
 	app.Commands = []cli.Command{
 		{
@@ -124,7 +129,7 @@ func doRun(c *cli.Context) {
 
 	go processSignal(sigchan, child, req_ch, exitQueue)
 
-	InitHttpTransport()
+	InitHttpTransport(c.Int("port"), c.Int("num"))
 
 	go processRequest(mq, req_ch)
 

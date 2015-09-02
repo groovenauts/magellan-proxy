@@ -5,19 +5,24 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"strconv"
 )
 
 var transport = http.Transport{
 	DisableKeepAlives: true,
 }
+var Port int = 80
+var BaseUrl string
 
-func InitHttpTransport() {
+func InitHttpTransport(port, num int) {
 	transport.DisableKeepAlives = true
-	transport.MaxIdleConnsPerHost = 0
+	transport.MaxIdleConnsPerHost = num
+	Port = port
+	BaseUrl = "http://127.0.0.1:" + strconv.Itoa(Port)
 }
 
 func ProcessHttpRequest(req *Request) (*Response, error) {
-	url := "http://127.0.0.1" + req.Env.PathInfo
+	url := BaseUrl + req.Env.PathInfo
 	url += req.Env.QueryString
 	httpReq, err := http.NewRequest(req.Env.Method, url, bytes.NewReader(req.Body))
 	if err != nil {
