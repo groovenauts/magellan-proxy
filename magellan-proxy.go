@@ -3,12 +3,12 @@ package main
 import (
 	"errors"
 	"github.com/codegangsta/cli"
+	"log"
 	"os"
 	"os/exec"
 	"os/signal"
 	"path/filepath"
 	"syscall"
-	"log"
 )
 
 func main() {

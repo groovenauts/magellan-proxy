@@ -5,8 +5,8 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"strings"
 	"strconv"
+	"strings"
 )
 
 var transport = http.Transport{

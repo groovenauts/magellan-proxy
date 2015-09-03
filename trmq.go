@@ -2,9 +2,10 @@ package main
 
 import (
 	"github.com/streadway/amqp"
+	"log"
 	"os"
 	"strings"
-	"log"
+	"syscall"
 )
 
 type MessageQueue struct {
@@ -72,6 +73,9 @@ func (q *MessageQueue) Consume() (chan *RequestMessage, error) {
 				req_ch <- ret
 			}
 		}
+		log.Print("TRMQ connection closed.")
+		self, _ := os.FindProcess(os.Getpid())
+		self.Signal(syscall.SIGTERM)
 	}()
 
 	return req_ch, nil
