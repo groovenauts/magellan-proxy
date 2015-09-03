@@ -19,6 +19,9 @@ build: ${SRCS}
 	zip ${PKGFILE} ${BASENAME}
 	rm -f ${BASENAME}
 
+release: build
+	ghr -u groovenauts --replace --draft --prerelease ${VERSION} pkg
+
 clean:
 	rm -rf ${PKGDIR}
 	rm -f ${BASENAME}
