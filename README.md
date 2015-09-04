@@ -6,8 +6,7 @@
 
 (In your Dockerfile)
 ```
-ADD https://github.com/groovenauts/magellan-proxy/releases/download/v0.0.1/magellan-proxy_linux-amd64 /usr/app/magellan-proxy
-RUN chmod +x /usr/app/magellan-proxy
+ADD https://github.com/groovenauts/magellan-proxy/releases/download/v0.0.2/magellan-proxy-0.0.2_linux-amd64.tar.gz /usr/app/
 ```
 
 ### Change CMD of your container
