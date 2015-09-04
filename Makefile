@@ -5,7 +5,7 @@ VERSION=`grep Version version.go | cut -f2 -d\"`
 OS=linux
 ARCH=amd64
 
-PKGNAME=${BASENAME}-${VERSION}-${OS}_${ARCH}.tar.gz
+PKGNAME=${BASENAME}-${VERSION}_${OS}-${ARCH}.tar.gz
 PKGFILE=${PKGDIR}/${PKGNAME}
 
 all: build
