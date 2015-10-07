@@ -14,12 +14,14 @@ var transport = http.Transport{
 }
 var Port int = 80
 var BaseUrl string
+var PublishPath string
 
-func InitHttpTransport(port, num int) {
+func InitHttpTransport(port, num int, publishPath string) {
 	transport.DisableKeepAlives = true
 	transport.MaxIdleConnsPerHost = num
 	Port = port
 	BaseUrl = "http://127.0.0.1:" + strconv.Itoa(Port)
+	PublishPath = publishPath
 }
 
 func ProcessHttpRequest(req *Request) (*Response, error) {

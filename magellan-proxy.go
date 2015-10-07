@@ -33,6 +33,11 @@ func main() {
 			Value: 1,
 			Usage: "Maximum number concurrent HTTP request",
 		},
+		cli.StringFlag{
+			Name: "publish",
+			Value: "/publish",
+			Usage: "Specify URL path to Post Publish message from MQTT",
+		},
 	}
 	app.Commands = []cli.Command{
 		{
@@ -135,7 +140,7 @@ func doRun(c *cli.Context) {
 	go processSignal(sigchan, child, req_ch, exitQueue)
 
 	jobNum := c.Int("num")
-	InitHttpTransport(c.Int("port"), jobNum)
+	InitHttpTransport(c.Int("port"), jobNum, c.String("publish"))
 
 	for i := 0; i < jobNum; i++ {
 		go processRequest(mq, req_ch)
