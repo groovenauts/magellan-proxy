@@ -107,7 +107,9 @@ func processRequest(mq *MessageQueue, req_ch chan *RequestMessage) {
 				BodyEncoding: "plain",
 			}
 		}
-		mq.Publish(req, res)
+		if res != nil {
+			mq.Publish(req, res)
+		}
 	}
 }
 
