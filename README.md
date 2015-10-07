@@ -57,8 +57,20 @@ gom build
 ### Build for Docker image (Linux/amd64)
 
 ```
-./scripts/build.sh
+make build
 ```
+
+### Release package
+
+```
+make release
+```
+or
+```
+make prerelease
+```
+
+and go to GitHub release page (https://github.com/groovenauts/magellan-proxy/releases) to fill release notes.
 
 ## License
 
