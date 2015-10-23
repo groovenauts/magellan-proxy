@@ -67,10 +67,11 @@ func (q *MessageQueue) Consume() (chan *RequestMessage, error) {
 				log.Printf("fail to decode request message from TRMQ: %s", err.Error())
 				msg.Nack(false, false)
 			} else {
-				msg.Ack(false)
 				ret.ReplyTo = msg.ReplyTo
 				ret.CorrelationId = msg.CorrelationId
 				req_ch <- ret
+				// send Ack after message was accepted by a processing goroutine (note that the capacity of req_ch is 0).
+				msg.Ack(false)
 			}
 		}
 		log.Print("TRMQ connection closed.")
