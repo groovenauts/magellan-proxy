@@ -58,7 +58,7 @@ func (q *MessageQueue) Consume() (chan *RequestMessage, error) {
 	if err != nil {
 		return nil, err
 	}
-	req_ch := make(chan *RequestMessage, 100)
+	req_ch := make(chan *RequestMessage)
 	go func() {
 		for msg := range ch {
 			ret := new(RequestMessage)
