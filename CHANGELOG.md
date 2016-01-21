@@ -1,3 +1,8 @@
+## 0.1.2
+
+- Just rebuild with Go 1.5.3 for fix potential vulnerability.
+  see https://groups.google.com/forum/#!topic/golang-nuts/MEATuOi_ei4
+
 ## 0.1.1
 
 - Shrink message channel capacity.
