@@ -2,13 +2,16 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"github.com/codegangsta/cli"
 	"log"
+	"net"
 	"os"
 	"os/exec"
 	"os/signal"
 	"path/filepath"
 	"syscall"
+	"time"
 )
 
 func main() {
@@ -34,7 +37,7 @@ func main() {
 			Usage: "Maximum number concurrent HTTP request",
 		},
 		cli.StringFlag{
-			Name: "publish",
+			Name:  "publish",
 			Value: "/publish",
 			Usage: "Specify URL path to Post Publish message from MQTT",
 		},
@@ -142,10 +145,33 @@ func doRun(c *cli.Context) {
 	go processSignal(sigchan, child, req_ch, exitQueue)
 
 	jobNum := c.Int("num")
-	InitHttpTransport(c.Int("port"), jobNum, c.String("publish"))
+	portNo := c.Int("port")
+	InitHttpTransport(portNo, jobNum, c.String("publish"))
 
-	for i := 0; i < jobNum; i++ {
-		go processRequest(mq, req_ch)
+	// wait until backend application server start to listen socket
+	maxWait := 60
+	ready := false
+	for i := 0; i < maxWait; i++ {
+		conn, err := net.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", portNo))
+		if err != nil {
+			if i == maxWait-1 {
+				log.Printf("timeout waiting for application server start to listen socket port:%d, err=%s",
+					portNo, err.Error())
+				sigchan <- os.Interrupt
+			}
+			time.Sleep(1000000000) // 1 sec
+		} else {
+			log.Printf("Confirmed application server listen to 127.0.0.1:#{portNo}")
+			conn.Close()
+			ready = true
+			break
+		}
+	}
+
+	if ready {
+		for i := 0; i < jobNum; i++ {
+			go processRequest(mq, req_ch)
+		}
 	}
 
 	for exit_p := range exitQueue {
