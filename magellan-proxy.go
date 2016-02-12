@@ -124,12 +124,6 @@ func doRun(c *cli.Context) {
 	}
 	defer mq.Close()
 
-	req_ch, err := mq.Consume()
-	if err != nil {
-		log.Printf("fail to get message: %s", err.Error())
-		return
-	}
-
 	child, err := spawn(c.Args())
 	if err != nil {
 		return
@@ -141,6 +135,8 @@ func doRun(c *cli.Context) {
 	go watchChild(child, sigchan)
 
 	exitQueue := make(chan bool)
+
+	req_ch := make(chan *RequestMessage)
 
 	go processSignal(sigchan, child, req_ch, exitQueue)
 
@@ -169,6 +165,12 @@ func doRun(c *cli.Context) {
 	}
 
 	if ready {
+		// start fetch request from TRMQ
+		err := mq.Consume(req_ch)
+		if err != nil {
+			log.Printf("fail to get message from TRMQ: %s", err.Error())
+			return
+		}
 		for i := 0; i < jobNum; i++ {
 			go processRequest(mq, req_ch)
 		}
