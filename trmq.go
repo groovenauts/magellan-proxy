@@ -53,12 +53,11 @@ func (q *MessageQueue) Close() {
 	q.Connection.Close()
 }
 
-func (q *MessageQueue) Consume() (chan *RequestMessage, error) {
+func (q *MessageQueue) Consume(req_ch chan *RequestMessage) error {
 	ch, err := q.Channel.Consume(q.RequestQueue, "_magellan_proxy_consumer", false, false, false, false, nil)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	req_ch := make(chan *RequestMessage)
 	go func() {
 		for msg := range ch {
 			ret := new(RequestMessage)
@@ -79,7 +78,7 @@ func (q *MessageQueue) Consume() (chan *RequestMessage, error) {
 		self.Signal(syscall.SIGTERM)
 	}()
 
-	return req_ch, nil
+	return nil
 }
 
 func (q *MessageQueue) Publish(req *RequestMessage, res *Response) error {

@@ -1,3 +1,8 @@
+## 0.1.3
+
+- Wait until backend application server start to listen socket before
+  dispatching requests.
+
 ## 0.1.2
 
 - Just rebuild with Go 1.5.3 for fix potential vulnerability.
