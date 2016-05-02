@@ -90,8 +90,9 @@ func watchChild(child *os.Process, sigchan chan os.Signal) {
 
 func processSignal(sigchan chan os.Signal, child *os.Process, req_ch chan *RequestMessage, exitQueue chan bool) {
 	sig := <-sigchan
-	_ = child.Signal(sig)
 	close(req_ch)
+	_ = child.Signal(sig)
+	_, _ = child.Wait()
 	exitQueue <- true
 	close(exitQueue)
 }
