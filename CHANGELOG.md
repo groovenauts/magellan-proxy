@@ -1,3 +1,11 @@
+## 0.1.4
+
+- Wait child process exited before exit.
+  I hope this can be workaround for kernel hang at docker container exit time on aufs.
+  see https://github.com/docker/docker/issues/14816
+      https://github.com/docker/docker/issues/13940
+      https://github.com/docker/docker/issues/9862
+
 ## 0.1.3
 
 - Wait until backend application server start to listen socket before
