@@ -6,7 +6,7 @@
 
 (In your Dockerfile)
 ```
-ADD https://github.com/groovenauts/magellan-proxy/releases/download/v0.1.3/magellan-proxy-0.1.3_linux-amd64 /usr/app/magellan-proxy
+ADD https://github.com/groovenauts/magellan-proxy/releases/download/v0.1.4/magellan-proxy-0.1.4_linux-amd64 /usr/app/magellan-proxy
 RUN chmod +x /usr/app/magellan-proxy
 ```
 
