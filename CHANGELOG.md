@@ -1,3 +1,7 @@
+## 0.1.5
+
+- Support --timezone option to set Time Zone in log timestamp.
+
 ## 0.1.4
 
 - Wait child process exited before exit.

@@ -14,6 +14,14 @@ import (
 	"time"
 )
 
+func setTimezone(zonename string) {
+	location, err := time.LoadLocation(zonename)
+	if err != nil {
+		location = time.FixedZone("UTC", 0)
+	}
+	time.Local = location
+}
+
 func main() {
 	log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds)
 	log.SetPrefix("magellan-proxy: ")
@@ -40,6 +48,11 @@ func main() {
 			Name:  "publish",
 			Value: "/publish",
 			Usage: "Specify URL path to Post Publish message from MQTT",
+		},
+		cli.StringFlag{
+			Name: "timezone",
+			Value: os.Getenv("TIMEZONE"),
+			Usage: "Specify Timezone name in the IANA Time Zone Database",
 		},
 	}
 	app.Commands = []cli.Command{
@@ -144,6 +157,8 @@ func doRun(c *cli.Context) {
 	jobNum := c.Int("num")
 	portNo := c.Int("port")
 	InitHttpTransport(portNo, jobNum, c.String("publish"))
+
+	setTimezone(c.String("timezone"))
 
 	// wait until backend application server start to listen socket
 	maxWait := 60
