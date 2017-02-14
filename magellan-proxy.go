@@ -50,9 +50,14 @@ func main() {
 			Usage: "Specify URL path to Post Publish message from MQTT",
 		},
 		cli.StringFlag{
-			Name: "timezone",
+			Name:  "timezone",
 			Value: os.Getenv("TIMEZONE"),
 			Usage: "Specify Timezone name in the IANA Time Zone Database",
+		},
+		cli.IntFlag{
+			Name:  "timeout",
+			Value: 60,
+			Usage: "Specify Timeout seconds to wait for the port opened",
 		},
 	}
 	app.Commands = []cli.Command{
@@ -161,7 +166,7 @@ func doRun(c *cli.Context) {
 	setTimezone(c.String("timezone"))
 
 	// wait until backend application server start to listen socket
-	maxWait := 60
+	maxWait := c.Int("timeout")
 	ready := false
 	for i := 0; i < maxWait; i++ {
 		conn, err := net.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", portNo))
