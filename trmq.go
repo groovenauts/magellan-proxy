@@ -74,11 +74,15 @@ func (q *MessageQueue) Consume(req_ch chan *RequestMessage) error {
 			}
 		}
 		log.Print("TRMQ connection closed.")
-		self, _ := os.FindProcess(os.Getpid())
-		self.Signal(syscall.SIGTERM)
+		q.SendToMyself(syscall.SIGTERM)
 	}()
 
 	return nil
+}
+
+func (q *MessageQueue) SendToMyself(signal os.Signal) {
+	self, _ := os.FindProcess(os.Getpid())
+	self.Signal(signal)
 }
 
 func (q *MessageQueue) Publish(req *RequestMessage, res *Response) error {
