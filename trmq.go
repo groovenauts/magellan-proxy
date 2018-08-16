@@ -56,6 +56,7 @@ func (q *MessageQueue) Close() {
 func (q *MessageQueue) Consume(req_ch chan *RequestMessage) error {
 	ch, err := q.Channel.Consume(q.RequestQueue, "_magellan_proxy_consumer", false, false, false, false, nil)
 	if err != nil {
+		q.SendToMyself(syscall.SIGTERM)
 		return err
 	}
 	go func() {
