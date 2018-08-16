@@ -1,3 +1,11 @@
+## 0.1.7
+
+- Send SIGTERM when amqp.Channel.Consume returns error
+
+## 0.1.6
+
+- Support --timeout option to wait until backend application server start to listen socket
+
 ## 0.1.5
 
 - Support --timezone option to set Time Zone in log timestamp.
