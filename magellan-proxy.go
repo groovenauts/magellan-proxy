@@ -102,15 +102,23 @@ func spawn(args []string) (*os.Process, error) {
 }
 
 func watchChild(child *os.Process, sigchan chan os.Signal) {
-	_, _ = child.Wait()
+	_, err := child.Wait()
+	if err != nil {
+		log.Printf("failed to wait child process %v because of %v\n", child, err)
+	}
 	sigchan <- os.Interrupt
 }
 
 func processSignal(sigchan chan os.Signal, child *os.Process, req_ch chan *RequestMessage, exitQueue chan bool) {
 	sig := <-sigchan
 	close(req_ch)
-	_ = child.Signal(sig)
-	_, _ = child.Wait()
+	if err := child.Signal(sig); err != nil {
+		log.Printf("failed to send signal %v to child process %v because of %v\n", sig, child, err)
+	}
+	_, err := child.Wait()
+	if err != nil {
+		log.Printf("failed to wait child process %v because of %v\n", child, err)
+	}
 	exitQueue <- true
 	close(exitQueue)
 }
