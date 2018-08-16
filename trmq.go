@@ -56,6 +56,7 @@ func (q *MessageQueue) Close() {
 func (q *MessageQueue) Consume(req_ch chan *RequestMessage) error {
 	ch, err := q.Channel.Consume(q.RequestQueue, "_magellan_proxy_consumer", false, false, false, false, nil)
 	if err != nil {
+		q.SendToMyself(syscall.SIGTERM)
 		return err
 	}
 	go func() {
@@ -74,11 +75,22 @@ func (q *MessageQueue) Consume(req_ch chan *RequestMessage) error {
 			}
 		}
 		log.Print("TRMQ connection closed.")
-		self, _ := os.FindProcess(os.Getpid())
-		self.Signal(syscall.SIGTERM)
+		q.SendToMyself(syscall.SIGTERM)
 	}()
 
 	return nil
+}
+
+func (q *MessageQueue) SendToMyself(signal os.Signal) {
+	pid := os.Getpid()
+	self, err := os.FindProcess(pid)
+	if err != nil {
+		log.Printf("Error on os.FindProcess for %v because of %v\n", pid, err)
+		return
+	}
+	if err := self.Signal(signal); err != nil {
+		log.Printf("Error on send %v to %v because of %v\n", signal, pid, err)
+	}
 }
 
 func (q *MessageQueue) Publish(req *RequestMessage, res *Response) error {
