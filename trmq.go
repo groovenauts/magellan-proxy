@@ -82,8 +82,15 @@ func (q *MessageQueue) Consume(req_ch chan *RequestMessage) error {
 }
 
 func (q *MessageQueue) SendToMyself(signal os.Signal) {
-	self, _ := os.FindProcess(os.Getpid())
-	self.Signal(signal)
+	pid := os.Getpid()
+	self, err := os.FindProcess(pid)
+	if err != nil {
+		log.Printf("Error on os.FindProcess for %v because of %v\n", pid, err)
+		return
+	}
+	if err := self.Signal(signal); err != nil {
+		log.Printf("Error on send %v to %v because of %v\n", signal, pid, err)
+	}
 }
 
 func (q *MessageQueue) Publish(req *RequestMessage, res *Response) error {
