@@ -1,3 +1,8 @@
+## 0.1.8
+
+- Add PID to log prefix for debugging
+- Add error loggings on error from Ack and Nack
+
 ## 0.1.7
 
 - Send SIGTERM when amqp.Channel.Consume returns error
