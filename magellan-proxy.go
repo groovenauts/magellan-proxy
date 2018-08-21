@@ -24,7 +24,7 @@ func setTimezone(zonename string) {
 
 func main() {
 	log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds)
-	log.SetPrefix("magellan-proxy: ")
+	log.SetPrefix(fmt.Sprintf("magellan-proxy[%d]: ", os.Getpid()))
 
 	app := cli.NewApp()
 	app.Name = "magellan-proxy"
