@@ -101,10 +101,29 @@ func spawn(args []string) (*os.Process, error) {
 	return child, nil
 }
 
+func create_oom_killed_file() {
+	filepath := "/var/tmp/oom_killed"
+	if f, err := os.OpenFile(filepath, os.O_RDONLY|os.O_CREATE, 0666); err != nil {
+		log.Printf("fail to open file %s: %s", filepath, err.Error())
+	} else {
+		f.Close()
+	}
+	return
+}
+
 func watchChild(child *os.Process, sigchan chan os.Signal) {
-	_, err := child.Wait()
+	state, err := child.Wait()
 	if err != nil {
 		log.Printf("failed to wait child process %v because of %v\n", child, err)
+	} else {
+		if s, ok := state.Sys().(syscall.WaitStatus); ok {
+			if s.Signaled() && s.Signal() == syscall.SIGKILL {
+				log.Printf("child process killed by SIGKILL. touch /var/tmp/oom_killed.")
+				create_oom_killed_file()
+			}
+		} else {
+			log.Printf("failed to convert child process status to syscall.WaitStatus")
+		}
 	}
 	sigchan <- os.Interrupt
 }
@@ -112,6 +131,7 @@ func watchChild(child *os.Process, sigchan chan os.Signal) {
 func processSignal(sigchan chan os.Signal, child *os.Process, req_ch chan *RequestMessage, exitQueue chan bool) {
 	sig := <-sigchan
 	close(req_ch)
+	log.Printf("received signal %d.\n", sig)
 	if err := child.Signal(sig); err != nil {
 		log.Printf("failed to send signal %v to child process %v because of %v\n", sig, child, err)
 	}
